@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Architecture - XAI Medical Diagnosis</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    color: #e2e8f0;
+  }
+  .container {
+    max-width: 1400px;
+    width: 100%;
+  }
+  .header {
+    text-align: center;
+    margin-bottom: 50px;
+  }
+  .header h1 {
+    font-size: 36px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #60a5fa 0%, #34d399 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 12px;
+  }
+  .header p {
+    font-size: 15px;
+    color: #94a3b8;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.5px;
+  }
+
+  /* Architecture diagram */
+  .architecture {
+    background: #1e293b;
+    border-radius: 24px;
+    padding: 60px 50px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    position: relative;
+    overflow: hidden;
+  }
+  .architecture::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #3b82f6, #10b981, #8b5cf6);
+  }
+
+  /* Main flow */
+  .flow {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  /* Row */
+  .flow-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    position: relative;
+  }
+  .flow-row.branched {
+    justify-content: space-between;
+  }
+
+  /* Block styles */
+  .block {
+    background: #0f172a;
+    border: 2px solid #334155;
+    border-radius: 16px;
+    padding: 24px 28px;
+    position: relative;
+    transition: all 0.3s ease;
+    flex: 1;
+  }
+  .block:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(59,130,246,0.2);
+    border-color: #3b82f6;
+  }
+  .block-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .block-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .block-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #f1f5f9;
+  }
+  .block-subtitle {
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    margin-top: 2px;
+  }
+  .block-content {
+    font-size: 13px;
+    color: #94a3b8;
+    line-height: 1.6;
+  }
+  .block-content .item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 7px;
+  }
+  .block-content .item::before {
+    content: '▸';
+    color: #3b82f6;
+    flex-shrink: 0;
+    font-size: 10px;
+    margin-top: 3px;
+  }
+  .block-tag {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    margin-top: 12px;
+  }
+
+  /* Color variants */
+  .input-block { border-color: #3b82f6; }
+  .input-block .block-icon { background: rgba(59,130,246,0.15); color: #60a5fa; }
+  .input-block .block-tag { background: rgba(59,130,246,0.1); color: #60a5fa; }
+
+  .process-block { border-color: #10b981; }
+  .process-block .block-icon { background: rgba(16,185,129,0.15); color: #34d399; }
+  .process-block .block-tag { background: rgba(16,185,129,0.1); color: #34d399; }
+
+  .model-block { border-color: #8b5cf6; }
+  .model-block .block-icon { background: rgba(139,92,246,0.15); color: #a78bfa; }
+  .model-block .block-tag { background: rgba(139,92,246,0.1); color: #a78bfa; }
+
+  .xai-block { border-color: #f59e0b; }
+  .xai-block .block-icon { background: rgba(245,158,11,0.15); color: #fbbf24; }
+  .xai-block .block-tag { background: rgba(245,158,11,0.1); color: #fbbf24; }
+
+  .eval-block { border-color: #06b6d4; }
+  .eval-block .block-icon { background: rgba(6,182,212,0.15); color: #22d3ee; }
+  .eval-block .block-tag { background: rgba(6,182,212,0.1); color: #22d3ee; }
+
+  .output-block { border-color: #ec4899; }
+  .output-block .block-icon { background: rgba(236,72,153,0.15); color: #f472b6; }
+  .output-block .block-tag { background: rgba(236,72,153,0.1); color: #f472b6; }
+
+  /* Arrows */
+  .arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #475569;
+    font-size: 24px;
+    font-weight: 300;
+    flex-shrink: 0;
+    width: 30px;
+  }
+  .arrow.down {
+    width: 100%;
+    padding: 8px 0;
+    font-size: 20px;
+  }
+
+  /* Branch container */
+  .branch-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    width: 100%;
+  }
+
+  /* Small blocks in grid */
+  .small-block {
+    padding: 18px 20px;
+  }
+  .small-block .block-title {
+    font-size: 14px;
+  }
+  .small-block .block-content {
+    font-size: 12px;
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 40px;
+    padding: 20px;
+    background: rgba(15,23,42,0.5);
+    border-radius: 12px;
+    border: 1px solid #334155;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #cbd5e1;
+  }
+  .legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+  }
+
+  /* Print styles */
+  @media print {
+    body {
+      background: white;
+      padding: 20px;
+    }
+    .architecture {
+      box-shadow: none;
+      background: white;
+      border: 2px solid #e2e8f0;
+    }
+    .block {
+      break-inside: avoid;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>System Architecture</h1>
+    <p>EXPLAINABLE MEDICAL DIAGNOSIS MODEL — END-TO-END PIPELINE</p>
+  </div>
+
+  <div class="architecture">
+    <div class="flow">
+
+      <!-- INPUT -->
+      <div class="flow-row">
+        <div class="block input-block">
+          <div class="block-header">
+            <div class="block-icon">📥</div>
+            <div>
+              <div class="block-title">Input — NIH Chest X-ray14 Dataset</div>
+              <div class="block-subtitle">Raw medical imaging data</div>
+            </div>
+          </div>
+          <div class="block-content">
+            <div class="item">112,120 frontal chest X-ray images (PNG format)</div>
+            <div class="item">14 disease labels (multi-label classification)</div>
+            <div class="item">984 images with bounding box ground truth annotations</div>
+            <div class="item">Dataset size: ~45 GB</div>
+          </div>
+          <div class="block-tag">DATA SOURCE</div>
+        </div>
+      </div>
+
+      <div class="arrow down">↓</div>
+
+      <!-- PREPROCESSING -->
+      <div class="flow-row">
+        <div class="block process-block">
+          <div class="block-header">
+            <div class="block-icon">⚙️</div>
+            <div>
+              <div class="block-title">Data Preprocessing Pipeline</div>
+              <div class="block-subtitle">Image transformation & normalization</div>
+            </div>
+          </div>
+          <div class="block-content">
+            <div class="item">Resize images to 224×224 pixels</div>
+            <div class="item">Convert grayscale to 3-channel RGB (repeat channels)</div>
+            <div class="item">Normalize using ImageNet statistics (mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])</div>
+            <div class="item">Train/Val/Test split: 80% / 10% / 10%</div>
+            <div class="item">Compute class weights for handling imbalance</div>
+          </div>
+          <div class="block-tag">MODULE 1</div>
+        </div>
+      </div>
+
+      <div class="arrow down">↓</div>
+
+      <!-- CNN MODELS (BRANCHED) -->
+      <div class="flow-row branched">
+        <div class="branch-container">
+          <div class="block model-block small-block">
+            <div class="block-header">
+              <div class="block-icon">🧠</div>
+              <div>
+                <div class="block-title">ResNet50</div>
+                <div class="block-subtitle">Deep residual network</div>
+              </div>
+            </div>
+            <div class="block-content">
+              <div class="item">50 layers, ~25M parameters</div>
+              <div class="item">Pre-trained on ImageNet</div>
+              <div class="item">Skip connections prevent vanishing gradient</div>
+              <div class="item">Final layer: Linear(2048 → 14) + Sigmoid</div>
+              <div class="item">Training: BCEWithLogitsLoss, Adam optimizer</div>
+            </div>
+            <div class="block-tag">MODEL A</div>
+          </div>
+
+          <div class="block model-block small-block">
+            <div class="block-header">
+              <div class="block-icon">🧠</div>
+              <div>
+                <div class="block-title">EfficientNet-B0</div>
+                <div class="block-subtitle">Compound-scaled network</div>
+              </div>
+            </div>
+            <div class="block-content">
+              <div class="item">Lightweight, ~5.3M parameters</div>
+              <div class="item">Pre-trained on ImageNet</div>
+              <div class="item">MBConv blocks with SE modules</div>
+              <div class="item">Final layer: Linear(1280 → 14) + Sigmoid</div>
+              <div class="item">More memory efficient than ResNet50</div>
+            </div>
+            <div class="block-tag">MODEL B</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="arrow down">↓</div>
+
+      <!-- PREDICTIONS -->
+      <div class="flow-row">
+        <div class="block process-block">
+          <div class="block-header">
+            <div class="block-icon">📊</div>
+            <div>
+              <div class="block-title">Disease Classification Output</div>
+              <div class="block-subtitle">Multi-label probability scores</div>
+            </div>
+          </div>
+          <div class="block-content">
+            <div class="item">14 independent disease probability scores [0, 1]</div>
+            <div class="item">Target performance: AUC-ROC ≥ 0.80 per class</div>
+            <div class="item">Both models evaluated on same test set for fair comparison</div>
+          </div>
+          <div class="block-tag">MODULE 2 OUTPUT</div>
+        </div>
+      </div>
+
+      <div class="arrow down">↓</div>
+
+      <!-- XAI METHODS (BRANCHED) -->
+      <div class="flow-row branched">
+        <div class="branch-container">
+          <div class="block xai-block small-block">
+            <div class="block-header">
+              <div class="block-icon">🔍</div>
+              <div>
+                <div class="block-title">Grad-CAM</div>
+                <div class="block-subtitle">Gradient-weighted activation mapping</div>
+              </div>
+            </div>
+            <div class="block-content">
+              <div class="item">Hook into final convolutional layer</div>
+              <div class="item">Compute gradient of class score w.r.t. feature maps</div>
+              <div class="item">Generate 7×7 coarse heatmap</div>
+              <div class="item">Upsample to 224×224 using bilinear interpolation</div>
+              <div class="item">Fast: milliseconds per image</div>
+            </div>
+            <div class="block-tag">XAI METHOD 1</div>
+          </div>
+
+          <div class="block xai-block small-block">
+            <div class="block-header">
+              <div class="block-icon">🔍</div>
+              <div>
+                <div class="block-title">GradientSHAP</div>
+                <div class="block-subtitle">Shapley-based attribution</div>
+              </div>
+            </div>
+            <div class="block-content">
+              <div class="item">Define Gaussian noise baseline distribution</div>
+              <div class="item">Integrate gradients along baseline → input path</div>
+              <div class="item">Compute pixel-level SHAP values</div>
+              <div class="item">Generate full 224×224 attribution map</div>
+              <div class="item">Precompute and cache (slower than Grad-CAM)</div>
+            </div>
+            <div class="block-tag">XAI METHOD 2</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="arrow down">↓</div>
+
+      <!-- HEATMAPS -->
+      <div class="flow-row">
+        <div class="block xai-block">
+          <div class="block-header">
+            <div class="block-icon">🗺️</div>
+            <div>
+              <div class="block-title">Explanation Heatmap Generation</div>
+              <div class="block-subtitle">Visual attribution maps for each prediction</div>
+            </div>
+          </div>
+          <div class="block-content">
+            <div class="item">4 sets of heatmaps: (ResNet50 + Grad-CAM), (ResNet50 + SHAP), (EfficientNet + Grad-CAM), (EfficientNet + SHAP)</div>
+            <div class="item">984 test images × 4 combinations = 3,936 total heatmaps</div>
+            <div class="item">All maps normalized to [0, 1] range</div>
+            <div class="item">Cached as .npy files for efficient metric computation</div>
+          </div>
+          <div class="block-tag">MODULE 3 OUTPUT</div>
+        </div>
+      </div>
+
+      <div class="arrow down">↓</div>
+
+      <!-- EVALUATION METRICS (3 COLUMNS) -->
+      <div class="flow-row branched">
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; width: 100%;">
+          <div class="block eval-block small-block">
+            <div class="block-header">
+              <div class="block-icon" style="font-size: 20px; font-weight: 800;">1</div>
+              <div>
+                <div class="block-title">IoU Score</div>
+                <div class="block-subtitle">Localization accuracy</div>
+              </div>
+            </div>
+            <div class="block-content">
+              <div class="item">Threshold heatmap at 50th percentile</div>
+              <div class="item">Compare with ground truth bounding box</div>
+              <div class="item">Compute Intersection over Union</div>
+            </div>
+            <div class="block-tag" style="background: rgba(6,182,212,0.1); color: #22d3ee;">METRIC 1</div>
+          </div>
+
+          <div class="block eval-block small-block">
+            <div class="block-header">
+              <div class="block-icon" style="font-size: 20px; font-weight: 800;">2</div>
+              <div>
+                <div class="block-title">Fidelity Score</div>
+                <div class="block-subtitle">Deletion test</div>
+              </div>
+            </div>
+            <div class="block-content">
+              <div class="item">Remove top-K% important pixels</div>
+              <div class="item">Re-run model, measure confidence drop</div>
+              <div class="item">Compute S₀ - S₁</div>
+            </div>
+            <div class="block-tag" style="background: rgba(6,182,212,0.1); color: #22d3ee;">METRIC 2</div>
+          </div>
+
+          <div class="block eval-block small-block">
+            <div class="block-header">
+              <div class="block-icon" style="font-size: 20px; font-weight: 800;">3</div>
+              <div>
+                <div class="block-title">Stability Score</div>
+                <div class="block-subtitle">Perturbation test</div>
+              </div>
+            </div>
+            <div class="block-content">
+              <div class="item">Add Gaussian noise (σ=0.02)</div>
+              <div class="item">Regenerate explanation</div>
+              <div class="item">Compute cosine similarity</div>
+            </div>
+            <div class="block-tag" style="background: rgba(6,182,212,0.1); color: #22d3ee;">METRIC 3</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="arrow down">↓</div>
+
+      <!-- FINAL OUTPUT -->
+      <div class="flow-row">
+        <div class="block output-block">
+          <div class="block-header">
+            <div class="block-icon">📈</div>
+            <div>
+              <div class="block-title">Comparative Analysis & Results</div>
+              <div class="block-subtitle">Quantitative XAI benchmark</div>
+            </div>
+          </div>
+          <div class="block-content">
+            <div class="item">4×3 comparison table: (ResNet50/EfficientNet) × (Grad-CAM/SHAP) × (IoU/Fidelity/Stability)</div>
+            <div class="item">Statistical analysis: mean ± standard deviation per metric</div>
+            <div class="item">Fidelity curves showing confidence drop vs. K% pixels removed</div>
+            <div class="item">Qualitative visualization: heatmap overlays on sample X-rays</div>
+            <div class="item">Research paper with findings ready for IEEE CBMS / ICMLA submission</div>
+          </div>
+          <div class="block-tag">FINAL OUTPUT</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Legend -->
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-dot" style="background: #3b82f6;"></div>
+        <span>Input Data</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background: #10b981;"></div>
+        <span>Data Processing</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background: #8b5cf6;"></div>
+        <span>CNN Models</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background: #f59e0b;"></div>
+        <span>XAI Methods</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background: #06b6d4;"></div>
+        <span>Evaluation Metrics</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background: #ec4899;"></div>
+        <span>Final Output</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

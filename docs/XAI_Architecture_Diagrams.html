@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XAI Medical Diagnosis — Architecture Diagrams</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #070E1A;
+    --panel:    #0D1B2E;
+    --border:   #1A3050;
+    --blue:     #1A7FD4;
+    --teal:     #00C4A0;
+    --purple:   #8B5CF6;
+    --gold:     #F59E0B;
+    --red:      #EF4444;
+    --green:    #22C55E;
+    --text:     #E8F0F8;
+    --muted:    #6B8BA4;
+    --mono:     'JetBrains Mono', monospace;
+    --sans:     'Outfit', sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .site-header {
+    padding: 48px 60px 32px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(135deg, #070E1A 0%, #0A1828 100%);
+  }
+  .site-header .badge {
+    display: inline-block;
+    background: rgba(0,196,160,0.12);
+    border: 1px solid rgba(0,196,160,0.35);
+    color: var(--teal);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    padding: 5px 14px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+    font-family: var(--mono);
+  }
+  .site-header h1 {
+    font-size: clamp(28px, 4vw, 42px);
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 10px;
+    background: linear-gradient(135deg, #E8F0F8 0%, #6BBFE0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .site-header p {
+    color: var(--muted);
+    font-size: 15px;
+    max-width: 700px;
+    line-height: 1.6;
+  }
+  .nav-tabs {
+    display: flex;
+    gap: 6px;
+    margin-top: 32px;
+    flex-wrap: wrap;
+  }
+  .nav-tabs button {
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .nav-tabs button:hover { border-color: var(--blue); color: var(--text); }
+  .nav-tabs button.active { background: var(--blue); border-color: var(--blue); color: #fff; font-weight: 600; }
+
+  /* ── SECTIONS ── */
+  .section { display: none; padding: 48px 60px; }
+  .section.active { display: block; animation: fadeIn 0.4s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+  .section-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+  .section-sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 40px;
+    font-family: var(--mono);
+  }
+
+  /* ── DIAGRAM CONTAINERS ── */
+  .diagram-wrap {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 40px;
+    margin-bottom: 32px;
+    overflow-x: auto;
+  }
+  .diagram-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .diagram-label::before {
+    content: '';
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--teal);
+  }
+
+  /* ═══════════════════════════════════════
+     DIAGRAM 1 — FULL SYSTEM PIPELINE
+  ═══════════════════════════════════════ */
+  .pipeline {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    min-width: 900px;
+  }
+  .pipe-module {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .pipe-module + .pipe-module::before {
+    content: '→';
+    position: absolute;
+    left: -18px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 20px;
+    z-index: 2;
+    font-weight: 300;
+  }
+  .pipe-header {
+    padding: 14px 16px 12px;
+    border-radius: 10px 10px 0 0;
+    text-align: center;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+  }
+  .pipe-body {
+    flex: 1;
+    border: 1px solid;
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+    padding: 16px 14px;
+  }
+  .pipe-body .step {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--muted);
+  }
+  .pipe-body .step::before {
+    content: '▸';
+    flex-shrink: 0;
+    margin-top: 1px;
+    font-size: 10px;
+  }
+  .pipe-body .io-tag {
+    margin-top: 14px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 10px;
+    text-align: center;
+  }
+
+  .m1 .pipe-header { background: rgba(26,127,212,0.2); color: #6BBFE0; }
+  .m1 .pipe-body   { border-color: rgba(26,127,212,0.25); background: rgba(26,127,212,0.04); }
+  .m1 .pipe-body .step::before { color: #6BBFE0; }
+  .m1 .pipe-body .io-tag { background: rgba(26,127,212,0.1); color: #6BBFE0; }
+
+  .m2 .pipe-header { background: rgba(0,196,160,0.15); color: var(--teal); }
+  .m2 .pipe-body   { border-color: rgba(0,196,160,0.2); background: rgba(0,196,160,0.03); }
+  .m2 .pipe-body .step::before { color: var(--teal); }
+  .m2 .pipe-body .io-tag { background: rgba(0,196,160,0.1); color: var(--teal); }
+
+  .m3 .pipe-header { background: rgba(139,92,246,0.2); color: #B89EF8; }
+  .m3 .pipe-body   { border-color: rgba(139,92,246,0.25); background: rgba(139,92,246,0.04); }
+  .m3 .pipe-body .step::before { color: #B89EF8; }
+  .m3 .pipe-body .io-tag { background: rgba(139,92,246,0.1); color: #B89EF8; }
+
+  .m4 .pipe-header { background: rgba(245,158,11,0.15); color: var(--gold); }
+  .m4 .pipe-body   { border-color: rgba(245,158,11,0.2); background: rgba(245,158,11,0.03); }
+  .m4 .pipe-body .step::before { color: var(--gold); }
+  .m4 .pipe-body .io-tag { background: rgba(245,158,11,0.1); color: var(--gold); }
+
+  .m5 .pipe-header { background: rgba(34,197,94,0.15); color: var(--green); }
+  .m5 .pipe-body   { border-color: rgba(34,197,94,0.2); background: rgba(34,197,94,0.03); }
+  .m5 .pipe-body .step::before { color: var(--green); }
+  .m5 .pipe-body .io-tag { background: rgba(34,197,94,0.1); color: var(--green); }
+
+  /* ═══════════════════════════════════════
+     DIAGRAM 2 — RESNET50
+  ═══════════════════════════════════════ */
+  .resnet-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    min-width: 700px;
+  }
+  .rn-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 4px;
+  }
+  .rn-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 11.5px;
+    font-weight: 600;
+    text-align: center;
+    line-height: 1.35;
+    position: relative;
+  }
+  .rn-block small {
+    font-weight: 400;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    margin-top: 3px;
+    opacity: 0.75;
+  }
+  .rn-arrow {
+    color: var(--muted);
+    font-size: 18px;
+    padding: 0 8px;
+    flex-shrink: 0;
+  }
+  .rn-arrow.down {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 16px;
+    color: var(--muted);
+    padding: 3px 0;
+    width: 100%;
+  }
+  .skip-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 0 0 0 36px;
+    margin-bottom: 4px;
+  }
+  .skip-line {
+    position: absolute;
+    left: 8px;
+    top: 0; bottom: 0;
+    width: 20px;
+    border-left: 2px dashed rgba(245,158,11,0.5);
+    border-bottom: 2px dashed rgba(245,158,11,0.5);
+    border-radius: 0 0 0 6px;
+    pointer-events: none;
+  }
+  .skip-label {
+    position: absolute;
+    left: -2px;
+    top: 50%;
+    transform: translateY(-50%) rotate(-90deg);
+    font-size: 8px;
+    color: var(--gold);
+    font-family: var(--mono);
+    white-space: nowrap;
+  }
+
+  /* layer color classes */
+  .c-input   { background: rgba(26,127,212,0.15);  color: #6BBFE0;   border: 1px solid rgba(26,127,212,0.3); }
+  .c-conv    { background: rgba(0,196,160,0.12);   color: var(--teal); border: 1px solid rgba(0,196,160,0.25); }
+  .c-res     { background: rgba(139,92,246,0.12);  color: #B89EF8;   border: 1px solid rgba(139,92,246,0.25); }
+  .c-pool    { background: rgba(245,158,11,0.12);  color: var(--gold);  border: 1px solid rgba(245,158,11,0.25); }
+  .c-fc      { background: rgba(34,197,94,0.12);   color: var(--green); border: 1px solid rgba(34,197,94,0.25); }
+  .c-out     { background: rgba(239,68,68,0.12);   color: #F87171;   border: 1px solid rgba(239,68,68,0.25); }
+  .c-xai     { background: rgba(245,158,11,0.2);   color: var(--gold);  border: 2px dashed rgba(245,158,11,0.5); }
+
+  /* ═══════════════════════════════════════
+     DIAGRAM 3 — EFFICIENTNET
+  ═══════════════════════════════════════ */
+  .eff-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    min-width: 700px;
+  }
+  .eff-col {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .eff-col-title {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 10px;
+  }
+  .eff-block {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .eff-block .dims {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 400;
+    color: var(--muted);
+  }
+  .mbconv-detail {
+    margin-top: 12px;
+    padding: 16px;
+    background: rgba(139,92,246,0.06);
+    border: 1px solid rgba(139,92,246,0.2);
+    border-radius: 10px;
+  }
+  .mbconv-detail h4 {
+    font-size: 12px;
+    color: #B89EF8;
+    font-weight: 700;
+    margin-bottom: 12px;
+    font-family: var(--mono);
+  }
+  .mbconv-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .mbconv-step .box {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .mbconv-step .arr { color: var(--muted); font-size: 14px; }
+  .mbconv-step .note { font-size: 10px; color: var(--muted); font-family: var(--mono); }
+
+  /* ═══════════════════════════════════════
+     DIAGRAM 4 — XAI ENGINE
+  ═══════════════════════════════════════ */
+  .xai-split {
+    display: grid;
+    grid-template-columns: 1fr 80px 1fr;
+    gap: 0;
+    min-width: 800px;
+  }
+  .xai-col { display: flex; flex-direction: column; gap: 4px; }
+  .xai-vs {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--border);
+    flex-direction: column;
+    gap: 6px;
+  }
+  .xai-vs span {
+    font-size: 9px;
+    color: var(--muted);
+    font-family: var(--mono);
+    letter-spacing: 1px;
+  }
+  .xai-step {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    line-height: 1.4;
+  }
+  .xai-step .num {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    margin-top: 1px;
+  }
+  .xai-step .txt { color: var(--text); }
+  .xai-step .txt small { display: block; color: var(--muted); font-size: 10.5px; margin-top: 2px; font-family: var(--mono); }
+  .xai-col-title {
+    font-size: 16px;
+    font-weight: 700;
+    padding: 12px 16px 16px;
+    border-radius: 10px 10px 0 0;
+    text-align: center;
+  }
+
+  .grad-step { background: rgba(26,127,212,0.08); border: 1px solid rgba(26,127,212,0.15); }
+  .grad-step .num { background: rgba(26,127,212,0.2); color: #6BBFE0; }
+  .shap-step { background: rgba(0,196,160,0.08); border: 1px solid rgba(0,196,160,0.15); }
+  .shap-step .num { background: rgba(0,196,160,0.2); color: var(--teal); }
+
+  /* ═══════════════════════════════════════
+     DIAGRAM 5 — EVALUATION METRICS
+  ═══════════════════════════════════════ */
+  .metrics-flow {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    min-width: 800px;
+  }
+  .metric-card {
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .metric-header {
+    padding: 16px 20px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .metric-num {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 800;
+    flex-shrink: 0;
+  }
+  .metric-name { font-size: 14px; font-weight: 700; line-height: 1.25; }
+  .metric-sub { font-size: 10px; font-family: var(--mono); margin-top: 2px; }
+  .metric-body { padding: 16px 20px 20px; }
+  .metric-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-size: 11.5px;
+    color: var(--muted);
+    line-height: 1.45;
+  }
+  .metric-step .dot {
+    flex-shrink: 0;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    margin-top: 5px;
+  }
+  .metric-formula {
+    margin-top: 14px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+  }
+  .metric-result {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .metric-result .good, .metric-result .bad {
+    font-size: 11px;
+    padding: 5px 10px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .metric-result .good { background: rgba(34,197,94,0.08); color: var(--green); }
+  .metric-result .bad  { background: rgba(239,68,68,0.08);  color: #F87171; }
+
+  .mc1 .metric-header { background: rgba(26,127,212,0.12); }
+  .mc1 .metric-body   { background: rgba(26,127,212,0.04); border: 1px solid rgba(26,127,212,0.15); border-top: none; border-radius: 0 0 12px 12px; }
+  .mc1 .metric-num    { background: rgba(26,127,212,0.25); color: #6BBFE0; }
+  .mc1 .metric-name   { color: #6BBFE0; }
+  .mc1 .metric-sub    { color: rgba(107,191,224,0.6); }
+  .mc1 .dot           { background: #6BBFE0; }
+  .mc1 .metric-formula{ background: rgba(26,127,212,0.12); color: #6BBFE0; border: 1px solid rgba(26,127,212,0.2); }
+
+  .mc2 .metric-header { background: rgba(0,196,160,0.1); }
+  .mc2 .metric-body   { background: rgba(0,196,160,0.03); border: 1px solid rgba(0,196,160,0.15); border-top: none; border-radius: 0 0 12px 12px; }
+  .mc2 .metric-num    { background: rgba(0,196,160,0.2); color: var(--teal); }
+  .mc2 .metric-name   { color: var(--teal); }
+  .mc2 .metric-sub    { color: rgba(0,196,160,0.6); }
+  .mc2 .dot           { background: var(--teal); }
+  .mc2 .metric-formula{ background: rgba(0,196,160,0.1); color: var(--teal); border: 1px solid rgba(0,196,160,0.2); }
+
+  .mc3 .metric-header { background: rgba(139,92,246,0.12); }
+  .mc3 .metric-body   { background: rgba(139,92,246,0.04); border: 1px solid rgba(139,92,246,0.2); border-top: none; border-radius: 0 0 12px 12px; }
+  .mc3 .metric-num    { background: rgba(139,92,246,0.25); color: #B89EF8; }
+  .mc3 .metric-name   { color: #B89EF8; }
+  .mc3 .metric-sub    { color: rgba(139,92,246,0.6); }
+  .mc3 .dot           { background: #B89EF8; }
+  .mc3 .metric-formula{ background: rgba(139,92,246,0.1); color: #B89EF8; border: 1px solid rgba(139,92,246,0.2); }
+
+  /* ═══════════════════════════════════════
+     DIAGRAM 6 — COMPARISON TABLE
+  ═══════════════════════════════════════ */
+  .comp-grid {
+    display: grid;
+    grid-template-columns: 220px repeat(4, 1fr);
+    gap: 2px;
+    min-width: 750px;
+  }
+  .cg-cell {
+    padding: 11px 14px;
+    font-size: 12px;
+    line-height: 1.4;
+    border-radius: 4px;
+  }
+  .cg-head {
+    background: rgba(255,255,255,0.05);
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+    text-align: center;
+  }
+  .cg-label {
+    background: rgba(255,255,255,0.03);
+    font-weight: 600;
+    color: var(--text);
+    font-size: 12px;
+  }
+  .cg-r1 { background: rgba(26,127,212,0.07); color: #6BBFE0; text-align: center; }
+  .cg-r2 { background: rgba(0,196,160,0.07); color: var(--teal); text-align: center; }
+  .cg-r3 { background: rgba(139,92,246,0.07); color: #B89EF8; text-align: center; }
+  .cg-r4 { background: rgba(245,158,11,0.07); color: var(--gold); text-align: center; }
+  .tick { color: var(--green); font-size: 15px; }
+  .cross { color: #F87171; font-size: 15px; }
+  .partial { color: var(--gold); font-size: 11px; font-family: var(--mono); }
+
+  /* legend */
+  .legend {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+  }
+
+  /* ── FOOTER ── */
+  .site-footer {
+    padding: 32px 60px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 12px;
+    font-family: var(--mono);
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .site-footer span { color: var(--teal); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    .site-header { padding: 32px 24px 24px; }
+    .section { padding: 32px 24px; }
+    .site-footer { padding: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="site-header">
+  <div class="badge">Architecture Diagrams</div>
+  <h1>Explainable Medical Diagnosis Model</h1>
+  <p>Complete architecture breakdown — system pipeline, CNN models, XAI methods, and evaluation framework. All diagrams are interactive and designed for academic presentation.</p>
+  <nav class="nav-tabs">
+    <button class="active" onclick="showSection('pipeline', this)">① Full Pipeline</button>
+    <button onclick="showSection('resnet', this)">② ResNet50</button>
+    <button onclick="showSection('effnet', this)">③ EfficientNet-B0</button>
+    <button onclick="showSection('xai', this)">④ XAI Engine</button>
+    <button onclick="showSection('metrics', this)">⑤ Evaluation Metrics</button>
+    <button onclick="showSection('comparison', this)">⑥ Comparison</button>
+  </nav>
+</header>
+
+<!-- ════════════════════════════════
+     SECTION 1 — FULL PIPELINE
+════════════════════════════════ -->
+<section class="section active" id="pipeline">
+  <div class="section-title">Full System Pipeline</div>
+  <div class="section-sub">End-to-end data flow — from raw X-ray images to final explanation quality scores</div>
+
+  <div class="diagram-wrap">
+    <div class="diagram-label">5-module sequential pipeline — M1 → M2 → M3 → M4 → M5</div>
+    <div class="pipeline">
+
+      <div class="pipe-module m1">
+        <div class="pipe-header">M1 — Data Pipeline</div>
+        <div class="pipe-body">
+          <div class="step">Download NIH Chest X-ray14 dataset</div>
+          <div class="step">Parse CSV for labels and bounding boxes</div>
+          <div class="step">Resize images to 224×224 px</div>
+          <div class="step">Normalize using ImageNet stats</div>
+          <div class="step">Convert grayscale → 3-channel</div>
+          <div class="step">80/10/10 train/val/test split</div>
+          <div class="step">Compute class weights for imbalance</div>
+          <div class="io-tag">Output: Tensor DataLoaders</div>
+        </div>
+      </div>
+
+      <div class="pipe-module m2" style="margin-left:24px;">
+        <div class="pipe-header">M2 — CNN Models</div>
+        <div class="pipe-body">
+          <div class="step">Load ResNet50 (pretrained ImageNet)</div>
+          <div class="step">Load EfficientNet-B0 (pretrained ImageNet)</div>
+          <div class="step">Replace final layer → Linear(n, 14)</div>
+          <div class="step">Sigmoid activation (multi-label)</div>
+          <div class="step">Train with BCEWithLogitsLoss</div>
+          <div class="step">Mixed precision (AMP) training</div>
+          <div class="step">Evaluate per-class AUC-ROC ≥ 0.80</div>
+          <div class="io-tag">Output: Trained model weights</div>
+        </div>
+      </div>
+
+      <div class="pipe-module m3" style="margin-left:24px;">
+        <div class="pipe-header">M3 — XAI Engine</div>
+        <div class="pipe-body">
+          <div class="step">Hook into final conv layer (Grad-CAM)</div>
+          <div class="step">Compute gradient-weighted activations</div>
+          <div class="step">Generate Grad-CAM heatmaps</div>
+          <div class="step">Define Gaussian noise baseline (SHAP)</div>
+          <div class="step">Compute GradientSHAP attributions</div>
+          <div class="step">Normalize all maps to [0, 1]</div>
+          <div class="step">Cache 984 × 4 maps to disk (.npy)</div>
+          <div class="io-tag">Output: 4 sets of explanation maps</div>
+        </div>
+      </div>
+
+      <div class="pipe-module m4" style="margin-left:24px;">
+        <div class="pipe-header">M4 — Evaluation Engine</div>
+        <div class="pipe-body">
+          <div class="step">Load bounding box ground truth</div>
+          <div class="step">Threshold heatmap → binary mask</div>
+          <div class="step">Compute IoU (Metric 1)</div>
+          <div class="step">Remove top-K% pixels, re-infer</div>
+          <div class="step">Measure confidence drop (Metric 2)</div>
+          <div class="step">Add Gaussian noise, re-explain</div>
+          <div class="step">Cosine similarity of maps (Metric 3)</div>
+          <div class="io-tag">Output: 3 scores × 4 combinations</div>
+        </div>
+      </div>
+
+      <div class="pipe-module m5" style="margin-left:24px;">
+        <div class="pipe-header">M5 — Analysis & Report</div>
+        <div class="pipe-body">
+          <div class="step">Aggregate all metric scores</div>
+          <div class="step">Build 4×3 comparison table</div>
+          <div class="step">Plot fidelity curves (K% vs drop)</div>
+          <div class="step">Generate heatmap overlay figures</div>
+          <div class="step">Statistical analysis (mean ± std)</div>
+          <div class="step">Write paper / project report</div>
+          <div class="step">Target: IEEE CBMS / ICMLA</div>
+          <div class="io-tag">Output: Paper + benchmark results</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="diagram-wrap">
+    <div class="diagram-label">Data flow — input to output per module</div>
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; min-width:700px;">
+      <div style="padding:10px 18px; background:rgba(26,127,212,0.12); border:1px solid rgba(26,127,212,0.3); border-radius:8px; font-size:12px; color:#6BBFE0; font-family:var(--mono);">RAW X-RAY<br><span style="font-size:9px;opacity:0.6;">112k PNG images</span></div>
+      <div style="color:var(--muted); font-size:18px;">→</div>
+      <div style="padding:10px 18px; background:rgba(0,196,160,0.08); border:1px solid rgba(0,196,160,0.2); border-radius:8px; font-size:12px; color:var(--teal); font-family:var(--mono);">TENSOR<br><span style="font-size:9px;opacity:0.6;">224×224×3, normalized</span></div>
+      <div style="color:var(--muted); font-size:18px;">→</div>
+      <div style="padding:10px 18px; background:rgba(139,92,246,0.1); border:1px solid rgba(139,92,246,0.25); border-radius:8px; font-size:12px; color:#B89EF8; font-family:var(--mono);">PREDICTIONS<br><span style="font-size:9px;opacity:0.6;">14 disease scores [0,1]</span></div>
+      <div style="color:var(--muted); font-size:18px;">→</div>
+      <div style="padding:10px 18px; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.2); border-radius:8px; font-size:12px; color:var(--gold); font-family:var(--mono);">HEATMAPS<br><span style="font-size:9px;opacity:0.6;">Grad-CAM + SHAP maps</span></div>
+      <div style="color:var(--muted); font-size:18px;">→</div>
+      <div style="padding:10px 18px; background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.2); border-radius:8px; font-size:12px; color:var(--green); font-family:var(--mono);">SCORES<br><span style="font-size:9px;opacity:0.6;">IoU, Fidelity, Stability</span></div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════
+     SECTION 2 — RESNET50
+════════════════════════════════ -->
+<section class="section" id="resnet">
+  <div class="section-title">ResNet50 Architecture</div>
+  <div class="section-sub">Deep residual network — 50 layers, ~25M parameters, fine-tuned for 14-class medical classification</div>
+
+  <div class="diagram-wrap">
+    <div class="diagram-label">Forward pass — input to output with skip connections highlighted</div>
+
+    <div style="display:flex; gap:48px; flex-wrap:wrap; min-width:700px;">
+
+      <!-- Main flow column -->
+      <div style="flex:1; min-width:380px;">
+        <!-- Input -->
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+          <div class="rn-block c-input" style="flex:1;">Input X-ray Image<small>224 × 224 × 3 (RGB)</small></div>
+        </div>
+        <div style="text-align:center; color:var(--muted); font-size:14px; margin:3px 0;">↓</div>
+
+        <!-- Stage 0 -->
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+          <div class="rn-block c-conv" style="flex:1;">Conv1 + BN + ReLU<small>7×7 kernel, stride 2 → 112×112×64</small></div>
+        </div>
+        <div style="text-align:center; color:var(--muted); font-size:14px; margin:3px 0;">↓</div>
+
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+          <div class="rn-block c-pool" style="flex:1;">MaxPool<small>3×3, stride 2 → 56×56×64</small></div>
+        </div>
+        <div style="text-align:center; color:var(--muted); font-size:14px; margin:3px 0;">↓</div>
+
+        <!-- Layer 1 -->
+        <div style="position:relative; border-left:2px dashed rgba(245,158,11,0.35); padding-left:20px; margin-bottom:6px;">
+          <div style="position:absolute; left:-1px; top:50%; transform:translateY(-50%); font-size:9px; color:var(--gold); font-family:var(--mono); writing-mode:vertical-rl; white-space:nowrap; padding:4px 0;">SKIP</div>
+          <div class="rn-block c-res" style="margin-bottom:4px;">Layer 1 — 3× Residual Blocks<small>1×1, 3×3, 1×1 convolutions → 56×56×256</small></div>
+        </div>
+        <div style="text-align:center; color:var(--muted); font-size:14px; margin:3px 0;">↓</div>
+
+        <!-- Layer 2 -->
+        <div style="position:relative; border-left:2px dashed rgba(245,158,11,0.35); padding-left:20px; margin-bottom:6px;">
+          <div style="position:absolute; left:-1px; top:50%; transform:translateY(-50%); font-size:9px; color:var(--gold); font-family:var(--mono); writing-mode:vertical-rl; white-space:nowrap; padding:4px 0;">SKIP</div>
+          <div class="rn-block c-res">Layer 2 — 4× Residual Blocks<small>Stride 2 → 28×28×512</small></div>
+        </div>
+        <div style="text-align:center; color:var(--muted); font-size:14px; margin:3px 0;">↓</div>
+
+        <!-- Layer 3 -->
+        <div style="position:relative; border-left:2px dashed rgba(245,158,11,0.35); padding-left:20px; margin-bottom:6px;">
+          <div style="position:absolute; left:-1px; top:50%; transform:translateY(-50%); font-size:9px; color:var(--gold); font-family:var(--mono); writing-mode:vertical-rl; white-space:nowrap; padding:4px 0;">SKIP</div>
+          <div class="rn-block c-res">Layer 3 — 6× Residual Blocks<small>Stride 2 → 14×14×1024</small></div>
+        </div>
+        <div style="text-align:center; color:var(--muted); font-size:14px; margin:3px 0;">↓</div>
+
+        <!-- Layer 4 — XAI hook point -->
+        <div style="position:relative; border-left:2px dashed rgba(245,158,11,0.35); padding-left:20px; margin-bottom:6px;">
+          <div style="position:absolute; left:-1px; top:50%; transform:translateY(-50%); font-size:9px; color:var(--gold); font-family:var(--mono); writing-mode:vertical-rl; white-space:nowrap; padding:4px 0;">SKIP</div>
+          <div class="rn-block c-xai">Layer 4 — 3× Residual Blocks ← Grad-CAM Hook<small>Stride 2 → 7×7×2048 | Grad-CAM reads gradients here</small></div>
+        </div>
+        <div style="text-align:center; color:var(--muted); font-size:14px; margin:3px 0;">↓</div>
+
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+          <div class="rn-block c-pool" style="flex:1;">Global Average Pooling<small>7×7×2048 → 1×1×2048 = 2048-dim vector</small></div>
+        </div>
+        <div style="text-align:center; color:var(--muted); font-size:14px; margin:3px 0;">↓</div>
+
+        <!-- Modified head -->
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+          <div class="rn-block c-fc" style="flex:1;">FC Layer (Modified for our project)<small>Linear(2048 → 14) — original 1000-class layer replaced</small></div>
+        </div>
+        <div style="text-align:center; color:var(--muted); font-size:14px; margin:3px 0;">↓</div>
+
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div class="rn-block c-out" style="flex:1;">Sigmoid Output<small>14 independent probabilities [0,1] — one per disease</small></div>
+        </div>
+      </div>
+
+      <!-- Right panel — skip connection explanation -->
+      <div style="width:260px; flex-shrink:0;">
+        <div style="padding:20px; background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.2); border-radius:12px; margin-bottom:16px;">
+          <div style="font-size:12px; font-weight:700; color:var(--gold); margin-bottom:12px; font-family:var(--mono);">▸ SKIP CONNECTION</div>
+          <div style="font-size:11.5px; color:var(--muted); line-height:1.6; margin-bottom:12px;">Inside each residual block, the input is added directly to the output — bypassing the conv layers.</div>
+          <div style="display:flex; flex-direction:column; gap:3px;">
+            <div style="padding:7px 12px; background:rgba(139,92,246,0.1); border:1px solid rgba(139,92,246,0.2); border-radius:6px; font-size:11px; color:#B89EF8; font-family:var(--mono);">x → [Conv → BN → ReLU] → F(x)</div>
+            <div style="text-align:center; color:var(--muted); font-size:13px;">+</div>
+            <div style="padding:7px 12px; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.2); border-radius:6px; font-size:11px; color:var(--gold); font-family:var(--mono);">x (original input)</div>
+            <div style="text-align:center; color:var(--muted); font-size:13px;">=</div>
+            <div style="padding:7px 12px; background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.2); border-radius:6px; font-size:11px; color:var(--green); font-family:var(--mono);">F(x) + x  ← residual</div>
+          </div>
+        </div>
+
+        <div style="padding:20px; background:rgba(245,158,11,0.08); border:2px dashed rgba(245,158,11,0.4); border-radius:12px;">
+          <div style="font-size:12px; font-weight:700; color:var(--gold); margin-bottom:10px; font-family:var(--mono);">▸ GRAD-CAM HOOK</div>
+          <div style="font-size:11.5px; color:var(--muted); line-height:1.6;">Grad-CAM attaches to <strong style="color:var(--gold);">model.layer4[-1]</strong> — the last residual block before pooling. This gives the richest spatial information for generating localization heatmaps.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════
+     SECTION 3 — EFFICIENTNET
+════════════════════════════════ -->
+<section class="section" id="effnet">
+  <div class="section-title">EfficientNet-B0 Architecture</div>
+  <div class="section-sub">Compound-scaled CNN — 5.3M parameters, built from MBConv blocks with squeeze-and-excitation</div>
+
+  <div class="diagram-wrap">
+    <div class="diagram-label">EfficientNet-B0 forward pass — 9 stages</div>
+
+    <div style="display:flex; gap:48px; flex-wrap:wrap; min-width:700px;">
+
+      <!-- Left: stage flow -->
+      <div style="flex:1; min-width:380px; display:flex; flex-direction:column; gap:4px;">
+
+        <div class="eff-block c-input">Input Image<div class="dims">224×224×3</div></div>
+        <div style="text-align:center; color:var(--muted); font-size:13px; padding:2px 0;">↓</div>
+        <div class="eff-block c-conv">Stage 0 — Conv3×3 + BN + Swish<div class="dims">112×112×32</div></div>
+        <div style="text-align:center; color:var(--muted); font-size:13px; padding:2px 0;">↓</div>
+        <div class="eff-block c-res">Stage 1 — MBConv1, k3×3 (×1)<div class="dims">112×112×16</div></div>
+        <div style="text-align:center; color:var(--muted); font-size:13px; padding:2px 0;">↓</div>
+        <div class="eff-block c-res">Stage 2 — MBConv6, k3×3 (×2)<div class="dims">56×56×24</div></div>
+        <div style="text-align:center; color:var(--muted); font-size:13px; padding:2px 0;">↓</div>
+        <div class="eff-block c-res">Stage 3 — MBConv6, k5×5 (×2)<div class="dims">28×28×40</div></div>
+        <div style="text-align:center; color:var(--muted); font-size:13px; padding:2px 0;">↓</div>
+        <div class="eff-block c-res">Stage 4 — MBConv6, k3×3 (×3)<div class="dims">14×14×80</div></div>
+        <div style="text-align:center; color:var(--muted); font-size:13px; padding:2px 0;">↓</div>
+        <div class="eff-block c-res">Stage 5 — MBConv6, k5×5 (×3)<div class="dims">14×14×112</div></div>
+        <div style="text-align:center; color:var(--muted); font-size:13px; padding:2px 0;">↓</div>
+        <div class="eff-block c-res">Stage 6 — MBConv6, k5×5 (×4)<div class="dims">7×7×192</div></div>
+        <div style="text-align:center; color:var(--muted); font-size:13px; padding:2px 0;">↓</div>
+        <div class="eff-block c-xai" style="font-size:12px;">Stage 7 — MBConv6, k3×3 (×1) ← Grad-CAM Hook<div class="dims">7×7×320 | XAI reads activations here</div></div>
+        <div style="text-align:center; color:var(--muted); font-size:13px; padding:2px 0;">↓</div>
+        <div class="eff-block c-conv">Head Conv1×1 + BN + Swish<div class="dims">7×7×1280</div></div>
+        <div style="text-align:center; color:var(--muted); font-size:13px; padding:2px 0;">↓</div>
+        <div class="eff-block c-pool">Global Average Pooling<div class="dims">1×1×1280 = 1280-dim vector</div></div>
+        <div style="text-align:center; color:var(--muted); font-size:13px; padding:2px 0;">↓</div>
+        <div class="eff-block c-fc">FC Layer (Modified)<div class="dims">Linear(1280 → 14)</div></div>
+        <div style="text-align:center; color:var(--muted); font-size:13px; padding:2px 0;">↓</div>
+        <div class="eff-block c-out">Sigmoid Output<div class="dims">14 disease probabilities</div></div>
+
+      </div>
+
+      <!-- Right: MBConv detail -->
+      <div style="width:260px; flex-shrink:0; display:flex; flex-direction:column; gap:16px;">
+
+        <div style="padding:20px; background:rgba(139,92,246,0.06); border:1px solid rgba(139,92,246,0.2); border-radius:12px;">
+          <div style="font-size:12px; font-weight:700; color:#B89EF8; margin-bottom:14px; font-family:var(--mono);">▸ MBCONV BLOCK INTERNALS</div>
+          <div style="display:flex; flex-direction:column; gap:4px; font-size:11.5px;">
+            <div style="padding:8px 12px; background:rgba(26,127,212,0.1); border-radius:6px; color:#6BBFE0;">1× 1×1 Conv (Expand channels)</div>
+            <div style="text-align:center; color:var(--muted); font-size:12px;">↓</div>
+            <div style="padding:8px 12px; background:rgba(0,196,160,0.1); border-radius:6px; color:var(--teal);">Depthwise Conv (3×3 or 5×5)</div>
+            <div style="text-align:center; color:var(--muted); font-size:12px;">↓</div>
+            <div style="padding:8px 12px; background:rgba(245,158,11,0.1); border-radius:6px; color:var(--gold);">Squeeze & Excitation (SE)</div>
+            <div style="text-align:center; color:var(--muted); font-size:12px;">↓</div>
+            <div style="padding:8px 12px; background:rgba(139,92,246,0.1); border-radius:6px; color:#B89EF8;">1×1 Conv (Project channels)</div>
+            <div style="text-align:center; color:var(--muted); font-size:12px;">↓</div>
+            <div style="padding:8px 12px; background:rgba(34,197,94,0.1); border-radius:6px; color:var(--green);">+ Skip Connection (if same shape)</div>
+          </div>
+        </div>
+
+        <div style="padding:20px; background:rgba(0,196,160,0.05); border:1px solid rgba(0,196,160,0.2); border-radius:12px;">
+          <div style="font-size:12px; font-weight:700; color:var(--teal); margin-bottom:12px; font-family:var(--mono);">▸ VS RESNET50</div>
+          <div style="display:flex; flex-direction:column; gap:8px; font-size:11.5px; color:var(--muted);">
+            <div style="display:flex; justify-content:space-between;"><span>Parameters</span><span style="color:var(--teal);">5.3M vs 25M</span></div>
+            <div style="display:flex; justify-content:space-between;"><span>Activation</span><span style="color:var(--teal);">Swish vs ReLU</span></div>
+            <div style="display:flex; justify-content:space-between;"><span>Has SE Module</span><span style="color:var(--green);">✓ Yes</span></div>
+            <div style="display:flex; justify-content:space-between;"><span>Depth</span><span style="color:var(--teal);">Shallower</span></div>
+            <div style="display:flex; justify-content:space-between;"><span>Memory use</span><span style="color:var(--green);">~4× less</span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════
+     SECTION 4 — XAI ENGINE
+════════════════════════════════ -->
+<section class="section" id="xai">
+  <div class="section-title">XAI Engine — Grad-CAM vs GradientSHAP</div>
+  <div class="section-sub">Two post-hoc explanation methods applied to both models — step-by-step internal process</div>
+
+  <div class="diagram-wrap">
+    <div class="diagram-label">Side-by-side process comparison — same input, different explanation algorithms</div>
+
+    <div class="xai-split">
+
+      <!-- GRAD-CAM -->
+      <div class="xai-col">
+        <div class="xai-col-title" style="background:rgba(26,127,212,0.12); color:#6BBFE0; border-radius:10px 10px 0 0;">
+          Grad-CAM
+          <div style="font-size:10px; font-family:var(--mono); font-weight:400; color:rgba(107,191,224,0.7); margin-top:4px;">Gradient-weighted Class Activation Mapping</div>
+        </div>
+
+        <div class="xai-step grad-step">
+          <div class="num">1</div>
+          <div class="txt">Forward pass — run X-ray through model<small>Get prediction (e.g. Pneumonia = 0.87)</small></div>
+        </div>
+        <div class="xai-step grad-step">
+          <div class="num">2</div>
+          <div class="txt">Hook into final conv layer (layer4 / last MBConv)<small>Capture the feature map activations at this layer</small></div>
+        </div>
+        <div class="xai-step grad-step">
+          <div class="num">3</div>
+          <div class="txt">Backpropagate gradient of class score<small>∂(disease score) / ∂(feature maps)</small></div>
+        </div>
+        <div class="xai-step grad-step">
+          <div class="num">4</div>
+          <div class="txt">Global average pool the gradients<small>Each feature map gets one weight value</small></div>
+        </div>
+        <div class="xai-step grad-step">
+          <div class="num">5</div>
+          <div class="txt">Weighted sum of feature maps<small>α₁·A¹ + α₂·A² + ... → coarse heatmap (7×7)</small></div>
+        </div>
+        <div class="xai-step grad-step">
+          <div class="num">6</div>
+          <div class="txt">Apply ReLU — keep only positive contributions<small>Negative values = regions that reduce prediction</small></div>
+        </div>
+        <div class="xai-step grad-step">
+          <div class="num">7</div>
+          <div class="txt">Upsample to 224×224 (bilinear interpolation)<small>Overlay on original X-ray image</small></div>
+        </div>
+        <div style="margin-top:10px; padding:12px 16px; background:rgba(26,127,212,0.06); border:1px solid rgba(26,127,212,0.15); border-radius:8px; font-size:11px; display:flex; flex-direction:column; gap:6px;">
+          <div style="color:var(--green);">✓ Milliseconds per image — very fast</div>
+          <div style="color:var(--green);">✓ No model modification needed</div>
+          <div style="color:#F87171;">✗ Resolution limited by final conv layer size (7×7)</div>
+          <div style="color:#F87171;">✗ Only one class at a time</div>
+        </div>
+      </div>
+
+      <!-- VS divider -->
+      <div class="xai-vs">
+        <span>vs</span>
+      </div>
+
+      <!-- GRADIENTSHAP -->
+      <div class="xai-col">
+        <div class="xai-col-title" style="background:rgba(0,196,160,0.1); color:var(--teal); border-radius:10px 10px 0 0;">
+          GradientSHAP
+          <div style="font-size:10px; font-family:var(--mono); font-weight:400; color:rgba(0,196,160,0.65); margin-top:4px;">SHapley Additive exPlanations (deep variant)</div>
+        </div>
+
+        <div class="xai-step shap-step">
+          <div class="num">1</div>
+          <div class="txt">Define baseline distribution<small>N random Gaussian noise images — the "uninformative" reference</small></div>
+        </div>
+        <div class="xai-step shap-step">
+          <div class="num">2</div>
+          <div class="txt">Sample random baseline from distribution<small>Each attribution calculation uses a fresh noise sample</small></div>
+        </div>
+        <div class="xai-step shap-step">
+          <div class="num">3</div>
+          <div class="txt">Interpolate path from baseline → input<small>Create a straight-line path of images between noise and real X-ray</small></div>
+        </div>
+        <div class="xai-step shap-step">
+          <div class="num">4</div>
+          <div class="txt">Compute gradient at each interpolation point<small>∂(output) / ∂(input) at each point on the path</small></div>
+        </div>
+        <div class="xai-step shap-step">
+          <div class="num">5</div>
+          <div class="txt">Integrate gradients (expected value over path)<small>Average across all interpolation points and baselines</small></div>
+        </div>
+        <div class="xai-step shap-step">
+          <div class="num">6</div>
+          <div class="txt">Multiply by (input − baseline)<small>Gives each pixel its final SHAP attribution value</small></div>
+        </div>
+        <div class="xai-step shap-step">
+          <div class="num">7</div>
+          <div class="txt">Output pixel-level attribution map (224×224)<small>Both positive (+) and negative (−) values per pixel</small></div>
+        </div>
+        <div style="margin-top:10px; padding:12px 16px; background:rgba(0,196,160,0.05); border:1px solid rgba(0,196,160,0.15); border-radius:8px; font-size:11px; display:flex; flex-direction:column; gap:6px;">
+          <div style="color:var(--green);">✓ Theoretically grounded — Shapley axioms satisfied</div>
+          <div style="color:var(--green);">✓ Full 224×224 resolution output</div>
+          <div style="color:#F87171;">✗ 10–20× slower than Grad-CAM</div>
+          <div style="color:#F87171;">✗ Must precompute and cache results</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════
+     SECTION 5 — EVALUATION METRICS
+════════════════════════════════ -->
+<section class="section" id="metrics">
+  <div class="section-title">Evaluation Metrics — The Research Contribution</div>
+  <div class="section-sub">Three quantitative metrics that measure whether an explanation can actually be trusted</div>
+
+  <div class="diagram-wrap">
+    <div class="diagram-label">3-metric evaluation framework — applied to all 4 model+XAI combinations</div>
+    <div class="metrics-flow">
+
+      <!-- METRIC 1 -->
+      <div class="metric-card mc1">
+        <div class="metric-header">
+          <div class="metric-num">1</div>
+          <div>
+            <div class="metric-name">Localization Accuracy</div>
+            <div class="metric-sub">IoU Score</div>
+          </div>
+        </div>
+        <div class="metric-body">
+          <div style="font-size:11px; color:var(--muted); margin-bottom:12px; font-style:italic;">Does the explanation point to the right anatomical region?</div>
+          <div class="metric-step"><div class="dot"></div>Threshold heatmap at top 50th percentile → binary mask</div>
+          <div class="metric-step"><div class="dot"></div>Load NIH bounding box ground truth annotation</div>
+          <div class="metric-step"><div class="dot"></div>Compute pixel-wise overlap between mask and bbox</div>
+          <div class="metric-step"><div class="dot"></div>Divide overlap by total union area</div>
+          <div class="metric-formula">IoU = Overlap Area / Union Area</div>
+          <div class="metric-result">
+            <div class="good">↑ High = pointing at disease region</div>
+            <div class="bad">↓ Low = highlighting wrong area</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- METRIC 2 -->
+      <div class="metric-card mc2">
+        <div class="metric-header">
+          <div class="metric-num">2</div>
+          <div>
+            <div class="metric-name">Explanation Fidelity</div>
+            <div class="metric-sub">Deletion / Confidence Drop Test</div>
+          </div>
+        </div>
+        <div class="metric-body">
+          <div style="font-size:11px; color:var(--muted); margin-bottom:12px; font-style:italic;">Are the highlighted pixels actually responsible for the prediction?</div>
+          <div class="metric-step"><div class="dot"></div>Record original model confidence S₀</div>
+          <div class="metric-step"><div class="dot"></div>Identify top-K% most important pixels from heatmap</div>
+          <div class="metric-step"><div class="dot"></div>Replace those pixels with mean pixel value (mask)</div>
+          <div class="metric-step"><div class="dot"></div>Re-run model, record new confidence S₁</div>
+          <div class="metric-formula">Fidelity = S₀ − S₁ (confidence drop)</div>
+          <div class="metric-result">
+            <div class="good">↑ Large drop = pixels were genuine</div>
+            <div class="bad">↓ Small drop = explanation was misleading</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- METRIC 3 -->
+      <div class="metric-card mc3">
+        <div class="metric-header">
+          <div class="metric-num">3</div>
+          <div>
+            <div class="metric-name">Explanation Stability</div>
+            <div class="metric-sub">Perturbation Consistency</div>
+          </div>
+        </div>
+        <div class="metric-body">
+          <div style="font-size:11px; color:var(--muted); margin-bottom:12px; font-style:italic;">Does the explanation stay consistent for nearly identical inputs?</div>
+          <div class="metric-step"><div class="dot"></div>Generate explanation E₁ for original image</div>
+          <div class="metric-step"><div class="dot"></div>Add imperceptible Gaussian noise (σ=0.02) → I′</div>
+          <div class="metric-step"><div class="dot"></div>Generate explanation E₂ for noisy image I′</div>
+          <div class="metric-step"><div class="dot"></div>Flatten both maps to vectors, compute similarity</div>
+          <div class="metric-formula">Stability = CosSim(E₁, E₂)</div>
+          <div class="metric-result">
+            <div class="good">↑ High = stable, reliable explanation</div>
+            <div class="bad">↓ Low = flips on tiny input changes</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- How metrics connect -->
+  <div class="diagram-wrap">
+    <div class="diagram-label">How the 3 metrics connect to form your research contribution</div>
+    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; min-width:700px;">
+      <div style="flex:1; min-width:180px; padding:20px; background:rgba(26,127,212,0.06); border:1px solid rgba(26,127,212,0.15); border-radius:10px; text-align:center;">
+        <div style="font-size:22px; font-weight:800; color:#6BBFE0; margin-bottom:6px;">IoU</div>
+        <div style="font-size:11px; color:var(--muted);">Spatial accuracy<br>Is it in the right place?</div>
+      </div>
+      <div style="font-size:24px; color:var(--border);">+</div>
+      <div style="flex:1; min-width:180px; padding:20px; background:rgba(0,196,160,0.05); border:1px solid rgba(0,196,160,0.15); border-radius:10px; text-align:center;">
+        <div style="font-size:22px; font-weight:800; color:var(--teal); margin-bottom:6px;">Fidelity</div>
+        <div style="font-size:11px; color:var(--muted);">Decision faithfulness<br>Does it actually matter?</div>
+      </div>
+      <div style="font-size:24px; color:var(--border);">+</div>
+      <div style="flex:1; min-width:180px; padding:20px; background:rgba(139,92,246,0.06); border:1px solid rgba(139,92,246,0.15); border-radius:10px; text-align:center;">
+        <div style="font-size:22px; font-weight:800; color:#B89EF8; margin-bottom:6px;">Stability</div>
+        <div style="font-size:11px; color:var(--muted);">Consistency<br>Is it repeatable?</div>
+      </div>
+      <div style="font-size:24px; color:var(--border);">=</div>
+      <div style="flex:1.5; min-width:200px; padding:20px; background:rgba(245,158,11,0.07); border:1px solid rgba(245,158,11,0.2); border-radius:10px; text-align:center;">
+        <div style="font-size:16px; font-weight:700; color:var(--gold); margin-bottom:6px;">Complete XAI Trust Score</div>
+        <div style="font-size:11px; color:var(--muted);">Your research contribution —<br>quantitative trustworthiness benchmark</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════
+     SECTION 6 — COMPARISON
+════════════════════════════════ -->
+<section class="section" id="comparison">
+  <div class="section-title">4-Combination Comparison Framework</div>
+  <div class="section-sub">2 models × 2 XAI methods = 4 combinations evaluated on 3 metrics — this is your result table</div>
+
+  <div class="diagram-wrap">
+    <div class="diagram-label">What makes each combination unique</div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; min-width:700px;">
+      <div style="padding:20px; background:rgba(26,127,212,0.06); border:1px solid rgba(26,127,212,0.15); border-radius:10px;">
+        <div style="font-size:13px; font-weight:700; color:#6BBFE0; margin-bottom:10px;">ResNet50 + Grad-CAM</div>
+        <div style="font-size:11.5px; color:var(--muted); line-height:1.6;">The baseline combination. Most widely studied in existing literature. Grad-CAM hooks into layer4. Coarse 7×7 heatmap. Benchmark against which all other combinations are compared.</div>
+      </div>
+      <div style="padding:20px; background:rgba(0,196,160,0.05); border:1px solid rgba(0,196,160,0.15); border-radius:10px;">
+        <div style="font-size:13px; font-weight:700; color:var(--teal); margin-bottom:10px;">ResNet50 + SHAP</div>
+        <div style="font-size:11.5px; color:var(--muted); line-height:1.6;">Same architecture, different XAI. Isolates the effect of the explanation method on a fixed model. Tests if SHAP's theoretical grounding translates to better fidelity and stability scores.</div>
+      </div>
+      <div style="padding:20px; background:rgba(139,92,246,0.06); border:1px solid rgba(139,92,246,0.15); border-radius:10px;">
+        <div style="font-size:13px; font-weight:700; color:#B89EF8; margin-bottom:10px;">EfficientNet-B0 + Grad-CAM</div>
+        <div style="font-size:11.5px; color:var(--muted); line-height:1.6;">Same XAI, different architecture. Isolates the effect of model design on explanation quality. Tests whether a lighter model with SE modules produces better or worse localizations.</div>
+      </div>
+      <div style="padding:20px; background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.15); border-radius:10px;">
+        <div style="font-size:13px; font-weight:700; color:var(--gold); margin-bottom:10px;">EfficientNet-B0 + SHAP</div>
+        <div style="font-size:11.5px; color:var(--muted); line-height:1.6;">Full combination — lightweight modern architecture + theoretically grounded XAI. Expected to perform well but hypothesis is not assumed — your results will tell the real story.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-wrap">
+    <div class="diagram-label">Expected result table structure (TBD values filled after running experiments)</div>
+    <div class="comp-grid">
+      <div class="cg-cell cg-head">Method Combination</div>
+      <div class="cg-cell cg-head">AUC-ROC</div>
+      <div class="cg-cell cg-head">IoU Score</div>
+      <div class="cg-cell cg-head">Fidelity</div>
+      <div class="cg-cell cg-head">Stability</div>
+
+      <div class="cg-cell cg-label" style="color:#6BBFE0;">ResNet50 + Grad-CAM</div>
+      <div class="cg-cell cg-r1">~0.82</div>
+      <div class="cg-cell cg-r1" style="font-family:var(--mono); font-size:11px; color:var(--muted);">TBD</div>
+      <div class="cg-cell cg-r1" style="font-family:var(--mono); font-size:11px; color:var(--muted);">TBD</div>
+      <div class="cg-cell cg-r1" style="font-family:var(--mono); font-size:11px; color:var(--muted);">TBD</div>
+
+      <div class="cg-cell cg-label" style="color:var(--teal);">ResNet50 + SHAP</div>
+      <div class="cg-cell cg-r2">~0.82</div>
+      <div class="cg-cell cg-r2" style="font-family:var(--mono); font-size:11px; color:var(--muted);">TBD</div>
+      <div class="cg-cell cg-r2" style="font-family:var(--mono); font-size:11px; color:var(--muted);">TBD</div>
+      <div class="cg-cell cg-r2" style="font-family:var(--mono); font-size:11px; color:var(--muted);">TBD</div>
+
+      <div class="cg-cell cg-label" style="color:#B89EF8;">EfficientNet + Grad-CAM</div>
+      <div class="cg-cell cg-r3">~0.84</div>
+      <div class="cg-cell cg-r3" style="font-family:var(--mono); font-size:11px; color:var(--muted);">TBD</div>
+      <div class="cg-cell cg-r3" style="font-family:var(--mono); font-size:11px; color:var(--muted);">TBD</div>
+      <div class="cg-cell cg-r3" style="font-family:var(--mono); font-size:11px; color:var(--muted);">TBD</div>
+
+      <div class="cg-cell cg-label" style="color:var(--gold);">EfficientNet + SHAP</div>
+      <div class="cg-cell cg-r4">~0.84</div>
+      <div class="cg-cell cg-r4" style="font-family:var(--mono); font-size:11px; color:var(--muted);">TBD</div>
+      <div class="cg-cell cg-r4" style="font-family:var(--mono); font-size:11px; color:var(--muted);">TBD</div>
+      <div class="cg-cell cg-r4" style="font-family:var(--mono); font-size:11px; color:var(--muted);">TBD</div>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#6BBFE0;"></div>ResNet50 combinations</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--teal);"></div>Teal = SHAP variants</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#B89EF8;"></div>EfficientNet combinations</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--gold);"></div>Gold = best expected combination</div>
+    </div>
+  </div>
+</section>
+
+
+<footer class="site-footer">
+  <span>Project:</span> Explainable Medical Diagnosis Model &nbsp;|&nbsp;
+  <span>Dataset:</span> NIH Chest X-ray14 &nbsp;|&nbsp;
+  <span>Models:</span> ResNet50 · EfficientNet-B0 &nbsp;|&nbsp;
+  <span>XAI:</span> Grad-CAM · GradientSHAP &nbsp;|&nbsp;
+  <span>Metrics:</span> IoU · Fidelity · Stability
+</footer>
+
+<script>
+  function showSection(id, btn) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    btn.classList.add('active');
+  }
+</script>
+</body>
+</html>

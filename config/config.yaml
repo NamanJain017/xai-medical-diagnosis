@@ -1,0 +1,107 @@
+# ─────────────────────────────────────────────────────────
+# XAI Medical Diagnosis — Master Configuration
+# ─────────────────────────────────────────────────────────
+
+project:
+  name: "xai-medical-diagnosis"
+  version: "1.0.0"
+  seed: 42
+
+# ── Data ──────────────────────────────────────────────────
+data:
+  raw_dir: "./data/raw"
+  images_dir: "./data/raw/images"
+  labels_file: "./data/raw/Data_Entry_2017.csv"
+  bbox_file: "./data/raw/BBox_List_2017.csv"
+  splits_dir: "./data/splits"
+
+  image_size: 224
+  num_workers: 4
+  pin_memory: true
+
+  train_split: 0.80
+  val_split: 0.10
+  test_split: 0.10
+
+  # Forces all 984 bbox-annotated images into the test set
+  force_bbox_to_test: true
+
+# ── Disease Classes (14) ──────────────────────────────────
+classes:
+  - Atelectasis
+  - Cardiomegaly
+  - Effusion
+  - Infiltration
+  - Mass
+  - Nodule
+  - Pneumonia
+  - Pneumothorax
+  - Consolidation
+  - Edema
+  - Emphysema
+  - Fibrosis
+  - Pleural_Thickening
+  - Hernia
+
+num_classes: 14
+
+# ── ImageNet Normalization ────────────────────────────────
+normalize:
+  mean: [0.485, 0.456, 0.406]
+  std:  [0.229, 0.224, 0.225]
+
+# ── Training ──────────────────────────────────────────────
+training:
+  resnet50:
+    batch_size: 16          # RTX 4050 6GB VRAM safe with AMP
+    epochs: 30
+    learning_rate: 1.0e-4
+    weight_decay: 1.0e-4
+    early_stopping_patience: 7
+    freeze_epochs: 5        # Freeze backbone for first N epochs (faster warm-up)
+
+  efficientnet:
+    batch_size: 32          # Lighter model allows larger batch
+    epochs: 30
+    learning_rate: 1.0e-4
+    weight_decay: 1.0e-4
+    early_stopping_patience: 7
+    freeze_epochs: 5
+
+  mixed_precision: true     # torch.cuda.amp — halves VRAM, no accuracy loss
+  scheduler: "ReduceLROnPlateau"
+  scheduler_patience: 3
+  scheduler_factor: 0.5
+  min_lr: 1.0e-6
+
+# ── XAI ───────────────────────────────────────────────────
+xai:
+  gradcam:
+    resnet50_layer: "layer4"        # hooks model.layer4[-1]
+    efficientnet_layer: "features"  # hooks model.features[-1]
+
+  gradshap:
+    n_baselines: 20                 # number of Gaussian noise baseline samples
+    n_steps: 50                     # integration steps along path baseline→input
+    noise_std: 0.02                 # σ for baseline noise generation
+
+# ── Evaluation ────────────────────────────────────────────
+evaluation:
+  iou_threshold_percentile: 50      # threshold heatmap at 50th percentile → binary mask
+  fidelity_k_values: [10, 20, 30, 50]  # K% pixels to remove in deletion test
+  stability_noise_std: 0.02         # σ for input perturbation
+  stability_n_samples: 5            # noise variants per image
+
+# ── Output Paths ──────────────────────────────────────────
+output:
+  models_dir: "./outputs/models"
+  heatmaps_dir: "./outputs/heatmaps"
+  metrics_dir: "./outputs/metrics"
+  figures_dir: "./outputs/figures"
+  logs_dir: "./outputs/logs"
+
+# ── Smoke Test (--smoke-test flag) ───────────────────────
+smoke_test:
+  n_images: 100           # use only 100 images — full pipeline in minutes
+  epochs: 2               # 2 training epochs
+  n_heatmap_images: 10    # generate heatmaps for 10 images only

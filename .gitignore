@@ -1,0 +1,53 @@
+# Data — never commit (too large)
+data/raw/
+data/processed/
+
+# Model checkpoints — large binary files
+outputs/models/
+*.pth
+*.pt
+
+# Heatmap cache — large binary files
+outputs/heatmaps/
+*.npy
+
+# Logs
+outputs/logs/
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Virtual environments
+venv/
+env/
+.venv/
+.conda/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Sensitive
+*.env
+.kaggle/
+
+# TensorBoard
+runs/

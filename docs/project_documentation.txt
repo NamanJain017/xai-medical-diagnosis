@@ -1,0 +1,312 @@
+
+
+
+PROJECT DOCUMENTATION
+Explainable AI in Medical Image Diagnosis
+Quantitative Evaluation of Explanation Fidelity in
+CNN-Based Medical Diagnosis Systems
+
+
+B.Tech CSE — 3rd Year Capstone / Mini Project
+Domain: Machine Learning | Computer Vision | Explainable AI (XAI)
+
+
+
+1. Project at a Glance
+
+
+
+
+
+
+
+
+
+
+
+
+2. The Problem — Why This Matters
+
+2.1 The Challenge in Healthcare AI
+Artificial intelligence has demonstrated remarkable performance in medical imaging tasks — classifying chest X-rays, detecting skin lesions, identifying retinal diseases. However, there is a critical and persistent gap between a model that performs well and a model that can be trusted in a clinical environment.
+
+A radiologist reviewing an AI decision cannot simply accept a confidence score. They need to know: what part of the image drove this prediction? Is the model looking at the right anatomical region? Is its reasoning consistent? These questions define the field of Explainable AI (XAI).
+2.2 The Gap in Existing Research
+Current approaches to XAI in medical imaging fall into a critical trap: they treat explanation as a visual output rather than a measurable property. Most student projects and even many published papers follow this pattern:
+
+Train a CNN on medical images
+Generate a Grad-CAM heatmap
+Show that the heatmap visually looks like it highlights the disease region
+Conclude that the model is explainable
+
+This is not research — it is demonstration. The core problem is that nobody measures whether the explanation is actually faithful, accurate, or stable. A heatmap can look convincing to human eyes while pointing at completely irrelevant features. This gap is your opportunity.
+2.3 The Real-World Stakes
+In 2021, the EU AI Act classified medical AI as high-risk, requiring explainability as a regulatory requirement. The FDA has issued guidelines on AI/ML-based software as a medical device (SaMD). Clinical deployment of any diagnostic AI requires that physicians can audit, trust, and challenge model decisions. Without quantitative explainability metrics, this is impossible.
+This is not just academic — it is a genuine industrial and regulatory problem that has no clean solution yet.
+
+3. Problem Statement
+
+
+Existing CNN-based medical diagnosis models apply post-hoc explanation methods such as Grad-CAM and SHAP to generate visual explanations of model predictions. However, these explanations are rarely evaluated beyond visual inspection. There exists no standardized, quantitative framework to assess the faithfulness, localization accuracy, or stability of such explanations across different architectures. This project proposes and implements a rigorous multi-metric evaluation pipeline to quantitatively compare Grad-CAM and GradientSHAP explanations applied to ResNet50 and EfficientNet-B0 models trained on the NIH Chest X-ray14 dataset.
+
+4. Proposed Title
+
+
+Primary Title (Full):
+"Quantitative Evaluation of Explanation Fidelity in CNN-Based Medical Diagnosis: A Comparative Study of Grad-CAM and SHAP on Chest X-Ray Classification"
+
+Short Title (Conference submission):
+"Benchmarking XAI Faithfulness in Medical CNN Models"
+
+
+5. Existing Work and Literature
+
+5.1 Key Papers You Must Know
+
+
+5.2 What Existing Work Does NOT Do
+The gap in existing research — which is your contribution — can be summarized as follows:
+
+Most papers apply only ONE explanation method and do not compare methods head-to-head on the same model.
+Papers that do compare methods (Grad-CAM vs SHAP) rarely do so in a medical imaging context with ground truth localization data.
+Fidelity evaluation (deletion test) and stability evaluation (perturbation test) are proposed in isolation in different papers but never combined into a single unified evaluation pipeline.
+No paper has compared Grad-CAM vs SHAP across BOTH a residual architecture (ResNet) and an efficient scaling architecture (EfficientNet) on NIH Chest X-ray14 simultaneously.
+
+This gap is your research contribution. It is narrow, well-defined, and achievable within your timeline.
+
+6. Research Objectives
+
+
+This project has the following specific, measurable objectives:
+
+Train ResNet50 and EfficientNet-B0 on NIH Chest X-ray14 for multi-label classification and achieve AUC > 0.80 on key pathologies.
+Implement Grad-CAM and GradientSHAP as post-hoc explanation methods and generate explanation maps for the test set.
+Design and implement three quantitative explanation evaluation metrics: Localization Accuracy (IoU), Explanation Fidelity (Deletion Test), and Explanation Stability (Perturbation Test).
+Systematically evaluate all 4 combinations (2 models x 2 XAI methods) using all 3 metrics, producing a comparative result table.
+Draw conclusions on which explanation method is more faithful, accurate, and stable for clinical use — and whether architecture choice affects explanation quality.
+
+7. Dataset
+
+7.1 NIH Chest X-ray14
+
+7.2 Why NIH Chest X-ray14 Over Other Datasets
+The bounding box annotations are essential — they provide ground truth localization, enabling the IoU metric without which your Localization Accuracy cannot be computed.
+It is the most widely used chest X-ray benchmark, meaning your results can be compared against existing literature.
+Multi-label classification is a harder and more realistic problem than binary classification, adding academic weight.
+Healthcare domain is considered high-impact by most conference reviewers in AI/ML.
+
+7.3 Handling Class Imbalance
+NIH Chest X-ray14 is significantly imbalanced. For example, Hernia appears in less than 0.2% of images while Infiltration appears in ~18%. This must be handled carefully:
+
+Use weighted Binary Cross-Entropy loss with class weights inversely proportional to class frequency.
+Report per-class AUC-ROC instead of overall accuracy — overall accuracy is misleading on imbalanced data.
+For training efficiency, you may use a balanced subset of ~15,000–20,000 images. The bounding box subset (~984 images) is used exclusively for XAI evaluation.
+
+
+8. Proposed System Architecture
+
+8.1 End-to-End Pipeline Overview
+
+The system consists of five interconnected modules:
+
+
+8.2 Classification Model Architecture
+
+Both models follow the same fine-tuning strategy:
+
+Load pre-trained ImageNet weights (transfer learning)
+Replace final fully connected layer with a new layer of 14 output neurons
+Use Sigmoid activation (not Softmax) since this is multi-label classification — each class is independent
+Freeze early convolutional layers for first 5 epochs, then unfreeze all layers for full fine-tuning
+
+ResNet50 specifics:
+~25 million parameters
+Residual (skip) connections prevent vanishing gradients
+Grad-CAM applied to the final convolutional block (layer4)
+
+EfficientNet-B0 specifics:
+~5.3 million parameters — significantly lighter
+Compound scaling balances depth, width, and resolution
+More memory efficient, allowing larger batch sizes
+Grad-CAM applied to the final MBConv block
+
+8.3 XAI Method Details
+
+Grad-CAM (Gradient-weighted Class Activation Mapping):
+Hooks into the final convolutional layer of the model
+Computes the gradient of the predicted class score with respect to each feature map channel
+Weights each channel by its average gradient (global average pooling of gradients)
+Produces a coarse heatmap that is upsampled to original image size using bilinear interpolation
+Fast: adds negligible compute overhead. No model retraining required.
+
+GradientSHAP:
+Extension of SHAP (SHapley Additive exPlanations) for deep neural networks
+Uses a baseline image (typically Gaussian noise or black image) to compute attribution relative to a reference
+Computes expected gradient of the output with respect to input pixels over the path from baseline to input
+More theoretically grounded than Grad-CAM but 10–20x slower per image
+Produces pixel-level attribution maps with both positive and negative values
+Implemented via the Captum library (PyTorch’s XAI toolkit)
+
+
+9. The Three Evaluation Metrics — Your Research Contribution
+
+
+These three metrics are the heart of your research. They must be defined precisely, implemented consistently, and reported per class and per method.
+
+9.1 Metric 1: Localization Accuracy (IoU Score)
+
+What it measures: Does the explanation highlight the correct anatomical region?
+
+How it works:
+Threshold the heatmap at a fixed percentile (e.g., top 50% or top 20% of pixel values) to produce a binary segmentation mask.
+Compare this predicted mask against the ground truth bounding box annotation from the NIH dataset.
+Compute Intersection over Union (IoU): IoU = Area of Overlap / Area of Union.
+
+Interpretation:
+IoU = 1.0 means perfect overlap with the disease region
+IoU = 0.0 means no overlap at all
+Higher IoU = explanation is pointing to the right region of the chest
+
+Important considerations:
+This metric is only computable for the 984 bounding-box annotated images.
+You will compute this per disease class and report the mean across classes.
+The choice of threshold (top 20% vs top 50%) should be fixed before running experiments and reported clearly.
+
+9.2 Metric 2: Explanation Fidelity (Deletion / Perturbation Test)
+
+What it measures: Are the highlighted pixels actually responsible for the model’s prediction?
+
+How it works:
+For a correctly classified test image, take the original confidence score S0.
+Identify the top-K% most important pixels according to the explanation (the heatmap).
+Replace those pixels with a neutral value (mean pixel value or Gaussian noise) — this is the "deletion" step.
+Pass the modified image through the model and record the new confidence score S1.
+Compute Fidelity Score = S0 - S1 (the drop in confidence).
+
+Interpretation:
+Large drop (high fidelity) = the highlighted pixels were genuinely important for the decision
+Small drop (low fidelity) = the explanation was not faithful to the model’s actual reasoning
+
+Important considerations:
+Test multiple values of K (top 10%, 20%, 30%) and plot a fidelity curve.
+Average over all test images for statistical reliability.
+This is sometimes called the ROAR test (RemOve And Retrain) in literature — though you use a simpler masking version.
+
+9.3 Metric 3: Explanation Stability (Perturbation Consistency)
+
+What it measures: Does the explanation remain consistent for visually similar inputs?
+
+How it works:
+Take a test image I and generate its explanation E1 (heatmap/attribution map).
+Add a small amount of Gaussian noise to the image to get I’ (perturbed image, imperceptible to humans).
+Generate explanation E2 for the perturbed image.
+Compute Stability Score = 1 - MSE(E1, E2) or Cosine Similarity between E1 and E2 (flattened as vectors).
+
+Interpretation:
+High similarity (close to 1.0) = stable, trustworthy explanation
+Low similarity = the explanation changes dramatically for tiny input variations, making it clinically unreliable
+
+Important considerations:
+The noise level σ must be documented (typical: σ = 0.01 to 0.05 of the pixel value range).
+Run 3–5 noise samples per image and average for robustness.
+This metric directly addresses the concern raised by Adebayo et al. (2018) about sanity of saliency maps.
+
+9.4 Summary Comparison Table (Expected Output Format)
+
+
+
+10. Detailed Execution Plan
+
+Week 1–2: Data Preparation
+Download NIH Chest X-ray14 from Kaggle (pre-split dataset available directly on Kaggle, no need for 45GB full download — start with ~15k images).
+Parse the Data_Entry_2017.csv file to extract image paths, disease labels, and patient IDs.
+Parse BBox_List_2017.csv separately — these 984 images are your XAI evaluation set.
+Perform 80/10/10 train/val/test split. Ensure the bounding box images are exclusively in the test set.
+Implement a PyTorch Dataset class with on-the-fly loading, resizing to 224x224, and normalization using ImageNet mean/std ([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]).
+Convert grayscale images to 3-channel by repeating the channel (required for ImageNet pretrained models).
+Compute class weights for weighted loss. Visualize class distribution to document the imbalance.
+
+Week 3–4: Model Training
+Load ResNet50 and EfficientNet-B0 with pretrained=True from torchvision.
+Replace the classifier head: remove the final layer and add Linear(in_features, 14) with no activation.
+Use BCEWithLogitsLoss (numerically stable) with pos_weight for class imbalance.
+Optimizer: Adam with lr=1e-4. Use ReduceLROnPlateau scheduler on validation loss.
+Enable mixed precision training (torch.cuda.amp.autocast) to halve VRAM usage on your RTX 4050.
+Train for 30 epochs. Save checkpoint of best validation AUC.
+Track per-class AUC-ROC using sklearn.metrics. Target: mean AUC > 0.80.
+Repeat the exact same process for EfficientNet-B0. Document training time and final metrics for both models.
+
+Week 5: XAI Implementation
+Install Captum (PyTorch XAI library) and pytorch-grad-cam library.
+For Grad-CAM: register a forward hook on the final convolutional layer of each model. For ResNet50, this is model.layer4[-1]. For EfficientNet, this is the last MBConv block.
+For GradientSHAP: use Captum’s GradientShap class. Define a baseline distribution (random Gaussian noise images). Set n_samples=50 for reasonable accuracy.
+For each image in the bounding box test set (984 images), generate and save: the original image, the Grad-CAM heatmap (ResNet), the Grad-CAM heatmap (EfficientNet), the SHAP map (ResNet), the SHAP map (EfficientNet).
+Normalize all heatmaps to [0, 1] using min-max normalization before any metric computation.
+Cache all heatmaps to disk as numpy arrays — SHAP is slow and you do not want to recompute.
+
+Week 6: Metric Computation
+Localization (IoU): Load bounding box annotations. Threshold heatmaps at the top 50th percentile. Compute IoU between binary heatmap mask and ground truth bounding box mask. Compute per-class and mean IoU for all 4 model-method combinations.
+Fidelity: For K in [10, 20, 30, 50]%: identify top-K pixels in heatmap, replace with mean value, recompute model confidence, record delta. Plot fidelity curves for all 4 combinations.
+Stability: For each test image, add Gaussian noise (σ=0.02) to generate 5 noisy variants. Generate explanation for each. Compute mean pairwise cosine similarity. Average over all test images.
+Aggregate all results into the summary comparison table.
+
+Week 7–8: Analysis and Write-up
+Analyze your results: Which method wins on each metric? Is there a consistency between models?
+Create publication-quality figures: heatmap side-by-side comparisons, fidelity curves, bar charts for IoU and stability.
+Write the paper or project report following the structure: Abstract, Introduction, Related Work, Methodology, Experiments, Results, Discussion, Conclusion.
+If submitting to a conference, target the student/short paper track (4–6 pages) at IEEE CBMS or ICMLA.
+
+
+11. Tools and Technology Stack
+
+
+
+12. Risks and Mitigations
+
+
+
+13. Expected Results and Deliverables
+
+13.1 What You Will Produce
+Two trained classification models (ResNet50 and EfficientNet-B0) with saved weights and AUC metrics.
+A dataset of 984 x 4 explanation maps (heatmaps for all model-method combinations, saved as .npy).
+A results table comparing all 4 model-method combinations across all 3 metrics.
+Fidelity curves (confidence drop vs. K% pixels removed) for all combinations.
+Qualitative visualization figures showing heatmaps overlaid on X-ray images.
+A full project report / research paper (~6–10 pages).
+
+13.2 What the Results Might Show
+Based on existing literature, you can expect:
+Grad-CAM will likely produce higher IoU scores because it is spatially coarser and more likely to overlap with large bounding boxes.
+GradientSHAP will likely produce higher fidelity scores because it is more theoretically grounded in actual feature contribution.
+EfficientNet may show lower stability than ResNet due to its compound scaling architecture.
+These are hypotheses — your actual results may differ, and that is fine. Unexpected results make for stronger papers because they challenge assumptions.
+
+14. Publication Strategy
+
+
+
+Realistic expectation: A well-executed version of this project has a strong chance at a workshop paper or short paper at IEEE CBMS or ICMLA. This is a legitimate publication, not a predatory journal. It is the right target for a 3rd year student project.
+
+15. Summary Checklist
+
+
+Before submitting or presenting, verify:
+
+NIH Chest X-ray14 downloaded and parsed correctly
+Class imbalance addressed with weighted loss and AUC reporting
+ResNet50 achieves mean AUC > 0.80 on validation set
+EfficientNet-B0 achieves mean AUC > 0.80 on validation set
+Grad-CAM implemented and visually verified (does the heatmap look anatomically reasonable?)
+GradientSHAP implemented and all maps cached to disk
+IoU computed for all 984 bounding box images, all 4 combinations
+Fidelity test implemented with K = [10, 20, 30, 50]%
+Stability test implemented with at least 5 noise samples per image
+All metrics documented with exact formulas, thresholds, and hyperparameters
+Result table complete with all 4 model-method combinations
+At least 6 qualitative visualization figures created
+Paper / report written and proofread
+
+
+
+This document was generated as a project planning resource for academic use.
