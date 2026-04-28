@@ -29,3 +29,6 @@ tensorboard>=2.13.0
 # Notebooks
 jupyter>=1.0.0
 ipywidgets>=8.0.0
+
+# Frontend
+streamlit>=1.30.0
