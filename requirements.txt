@@ -11,7 +11,7 @@ scipy>=1.11.0
 
 # Image Processing
 Pillow>=9.5.0
-opencv-python>=4.8.0
+opencv-python-headless==4.11.0.86
 
 # XAI Libraries
 grad-cam>=1.4.8
