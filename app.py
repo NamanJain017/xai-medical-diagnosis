@@ -62,30 +62,39 @@ def setup_env():
     device = get_device()
     return cfg, device
 
+# Trained weights are hosted as GitHub Release assets (too large for the repo).
+WEIGHTS_BASE_URL = "https://github.com/NamanJain017/xai-medical-diagnosis/releases/download/v1.0-weights"
+WEIGHT_FILES = {"resnet50": "resnet50_best.pth", "efficientnet": "efficientnet_best.pth"}
+
+def _get_checkpoint(models_dir: Path, name: str) -> Path:
+    """Use the local best.pth if present, otherwise download it once from the release."""
+    local = models_dir / name / "best.pth"
+    if not local.exists():
+        local.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            torch.hub.download_url_to_file(f"{WEIGHTS_BASE_URL}/{WEIGHT_FILES[name]}", str(local), progress=False)
+        except Exception as e:
+            st.warning(f"Could not download trained weights for {name}: {e}")
+    return local
+
 @st.cache_resource(show_spinner="Loading Models...")
 def load_models(_cfg, _device):
     models = {}
     models_dir = Path(_cfg["output"]["models_dir"])
     num_classes = _cfg["num_classes"]
-    
-    # ResNet50
-    resnet = build_resnet50(num_classes=num_classes, pretrained=False)
-    resnet_ckpt = models_dir / "resnet50" / "best.pth"
-    if resnet_ckpt.exists():
-        ckpt = torch.load(resnet_ckpt, map_location=_device)
-        resnet.load_state_dict(ckpt["model_state_dict"])
-    resnet = resnet.to(_device).eval()
-    models["ResNet50"] = resnet
-    
-    # EfficientNet
-    effnet = build_efficientnet(num_classes=num_classes, pretrained=False)
-    effnet_ckpt = models_dir / "efficientnet" / "best.pth"
-    if effnet_ckpt.exists():
-        ckpt = torch.load(effnet_ckpt, map_location=_device)
-        effnet.load_state_dict(ckpt["model_state_dict"])
-    effnet = effnet.to(_device).eval()
-    models["EfficientNet"] = effnet
-    
+    builders = {"ResNet50": ("resnet50", build_resnet50), "EfficientNet": ("efficientnet", build_efficientnet)}
+
+    for label, (name, build) in builders.items():
+        model = build(num_classes=num_classes, pretrained=False)
+        ckpt_path = _get_checkpoint(models_dir, name)
+        if ckpt_path.exists():
+            ckpt = torch.load(ckpt_path, map_location=_device)
+            model.load_state_dict(ckpt["model_state_dict"])
+        else:
+            st.error(f"Trained weights for {label} not found - predictions would be meaningless.")
+            st.stop()
+        models[label] = model.to(_device).eval()
+
     return models
 
 def overlay_heatmap(img_np, heatmap, alpha=0.5, colormap=cv2.COLORMAP_JET):
